@@ -20,8 +20,12 @@ import (
 )
 
 func main() {
-	//retrieveDomains("ZZSTCD")
-	retrieveMemberGroupsForPolicy("871675", "8", "sw57")
+	retrieveDomains("ZZSTCD")
+
+	// startTime := time.Now()
+	// retrieveMemberGroupsForPolicy("871675", "8", "sw57")
+	// endTime := time.Now()
+	// log.Print("Elapsed Time: ", (endTime.Sub(startTime) / 1000))
 	//etrieveMembersForMemberGroup("871675", "2750678", "02/15/2025")
 }
 func retrieveMemberGroupsForPolicy(policyNumber string, flag string, user string) {
@@ -32,18 +36,16 @@ func retrieveMemberGroupsForPolicy(policyNumber string, flag string, user string
 	params.Flag = &flag
 	params.RequestApplication = user
 	params.RequestUser = &user
-	startTime := time.Now()
+
 	resp, err := apiclient.Default.Policy.GetPolicyUsingGET(params)
-	endTime := time.Now()
 	if err != nil {
 		log.Print("Error was not null!?")
 		log.Print(err)
 		return
 	}
-	log.Printf("%#v\n", resp.Payload)
-	log.Print("Elapsed Time: ", (endTime.Sub(startTime) / 1000), "seconds")
+
 	log.Print(resp.Payload.Payload.Name)
-	log.Print(resp.Payload.Payload.PolicyNumber)
+	log.Print("Policy Number ", resp.Payload.Payload.PolicyNumber)
 
 	currentDate := time.Now().Format("01/02/2006")
 	log.Print("Current Date: ", currentDate)
@@ -133,8 +135,12 @@ func retrieveDomains(domain string) {
 	params.VarianceFormat = &format
 	params.VarianceLevel = &level
 
+	// Create a new transport with the updated host and basepath
+	transport = httptransport.New("dev-corp-wk-ca1-k8s.sunlifecorp.com", "/dev-compass-integration-ns", apiclient.DefaultSchemes)
+	client := apiclient.New(transport, strfmt.Default)
+
 	//resp, err := client.System.GetHoldaysDatesUsingGET(nil)
-	resp, err := apiclient.Default.System.GetDomainUsingGET(params)
+	resp, err := client.System.GetDomainUsingGET(params)
 	if err != nil {
 		log.Print("Error was not null!?")
 		log.Print(err)
