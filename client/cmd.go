@@ -56,36 +56,9 @@ func retrieveMemberGroupsForPolicy(policyNumber string, flag string, user string
 }
 
 func retrieveMembersForMemberGroup(policyNumber string, memberGroupKey string, effectiveDate string) {
-
-	// Load Burp Suite CA certificate
-	caCertDER, err := os.ReadFile("../burpCert.der")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Convert DER to PEM format
-	caCertPEM := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: caCertDER,
-	})
-
-	caCertPool := x509.NewCertPool()
-	if !caCertPool.AppendCertsFromPEM(caCertPEM) {
-		log.Fatal("Failed to append Burp Suite CA certificate to pool")
-	}
-
-	proxyURL, err := url.Parse("http://127.0.0.1:8080")
-	if err != nil {
-		log.Fatal("Failed to parse proxy URL:", err)
-	}
+	enableProxy := false
 
 	transport := httptransport.New(apiclient.DefaultHost, apiclient.DefaultBasePath, apiclient.DefaultSchemes)
-	transport.Transport = &http.Transport{
-		Proxy: http.ProxyURL(proxyURL),
-		TLSClientConfig: &tls.Config{
-			RootCAs: caCertPool,
-		},
-	}
 	//transport.DefaultAuthentication = httptransport.BearerToken("your-token-here")
 	//transport.Consumers["application/aeb.cas.member.list.v1+json"] = runtime.XMLConsumer() // Add custom consumer
 	transport.Consumers = map[string]runtime.Consumer{
@@ -97,8 +70,51 @@ func retrieveMembersForMemberGroup(policyNumber string, memberGroupKey string, e
 		req.SetHeaderParam("Accept", "application/json")
 		return nil
 	})
-
 	client := apiclient.New(transport, strfmt.Default)
+
+	if enableProxy {
+		// Load Burp Suite CA certificate
+		caCertDER, err := os.ReadFile("../burpCert.der")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Convert DER to PEM format
+		caCertPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: caCertDER,
+		})
+
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caCertPEM) {
+			log.Fatal("Failed to append Burp Suite CA certificate to pool")
+		}
+
+		proxyURL, err := url.Parse("http://127.0.0.1:8080")
+		if err != nil {
+			log.Fatal("Failed to parse proxy URL:", err)
+		}
+
+		transport.Transport = &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+			TLSClientConfig: &tls.Config{
+				RootCAs: caCertPool,
+			},
+		}
+		//transport.DefaultAuthentication = httptransport.BearerToken("your-token-here")
+		//transport.Consumers["application/aeb.cas.member.list.v1+json"] = runtime.XMLConsumer() // Add custom consumer
+		transport.Consumers = map[string]runtime.Consumer{
+			"application/json": runtime.JSONConsumer(),
+		}
+
+		// Set the Accept header explicitly
+		transport.DefaultAuthentication = runtime.ClientAuthInfoWriterFunc(func(req runtime.ClientRequest, reg strfmt.Registry) error {
+			req.SetHeaderParam("Accept", "application/json")
+			return nil
+		})
+
+		client = apiclient.New(transport, strfmt.Default)
+	}
 
 	//https://dev-corp-wk-ca1-k8s.sunlifecorp.com/sit-compass-integration-ns/compassintegrationapp/
 	// member/list?effectiveDate=02%2F15%2F2025&memberGroupKeys=2750678&policyNumber=871675
