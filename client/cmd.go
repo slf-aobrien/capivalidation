@@ -20,13 +20,12 @@ import (
 )
 
 func main() {
-	retrieveDomains("ZZSTCD")
+	//retrieveDomains("ZZSTCD")
 
-	// startTime := time.Now()
-	// retrieveMemberGroupsForPolicy("871675", "8", "sw57")
-	// endTime := time.Now()
-	// log.Print("Elapsed Time: ", (endTime.Sub(startTime) / 1000))
-	//etrieveMembersForMemberGroup("871675", "2750678", "02/15/2025")
+	startTime := time.Now()
+	retrieveMemberGroupsForPolicy("871675", "8", "sw57")
+	endTime := time.Now()
+	log.Print("Elapsed Time: ", (endTime.Sub(startTime) / 1000))
 }
 func retrieveMemberGroupsForPolicy(policyNumber string, flag string, user string) {
 	//https://dev-corp-wk-ca1-k8s.sunlifecorp.com/sit-compass-integration-ns/compassintegrationapp/
